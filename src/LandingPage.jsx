@@ -1,8 +1,10 @@
 import React from 'react';
+import LoginButton from './LoginButton';
+import ApplicationButton from './ApplicationButton';
 
-const LandingPage = ()=>{
+export default function LandingPage = ()=>{
   return (
-    <div>
+    <div className="p-8 bg-white">
       <h1>DIAL A STOCKTAKER – IMPORTANT INFORMATION</h1>
       <h2>PLEASE READ THIS!</h2>
 
@@ -104,5 +106,10 @@ const LandingPage = ()=>{
         <li><strong>Trustworthy and Verified:</strong> We are a well-established division with a solid reputation for providing quality work experience to students and school leavers.</li>
         <li><strong>Legitimate Business:</strong> For your peace of mind, we invite you to visit our Facebook page and see testimonials from those who have worked with us. We’re proud of our long track record of success.</li>
       </ul>
-  )
+
+      <div className="flex gap-4 mt-6 />
+        <LoginButton />
+        <ApplicationButton />
+      </div>
+  );
 }
