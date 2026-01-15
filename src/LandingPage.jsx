@@ -3,6 +3,7 @@ import LoginButton from './LoginButton';
 import ApplicationButton from './ApplicationButton';
 
 export default function LandingPage = ()=>{
+   
   return (
     <div className="p-8 bg-white">
       <h1>DIAL A STOCKTAKER – IMPORTANT INFORMATION</h1>
