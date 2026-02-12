@@ -3,6 +3,9 @@ cat >> .gitignore << 'EOF'
 
 # ===== MONOREPO ADDITIONS =====
 
+# node modules
+node_modules/
+
 # Server
 server/node_modules
 server/.env

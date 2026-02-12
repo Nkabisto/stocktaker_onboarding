@@ -9,7 +9,7 @@
     "dev": "npm run start",
     "build": "cd client && npm run build",
     "install:all": "npm install && cd client && npm install && cd ../server && npm install",
-    "postinstall": "npm run install:all"
+    "postinstall": "cd client && npm install --ignore-scripts && cd ../server && npm install --ignore-scripts"
   },
   "devDependencies": {
     "concurrently": "^8.0.0"
