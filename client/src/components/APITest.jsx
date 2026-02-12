@@ -1,8 +1,8 @@
-import {useEffect, useState}
+import {useEffect, useState} from 'react'
 import axios from 'axios';
 
 export default function APITest(){
-    const [apiStaus, setApiStatus] = useState('Checking...');
+    const [apiStatus, setApiStatus] = useState('Checking...');
     const [healthStatus, setHealthStatus] = useState('Checking...');
 
   useEffect(() => {
@@ -14,6 +14,15 @@ export default function APITest(){
       .catch(error => {
         setApiStatus(`❌ Failed to connect: ${error.message}`);
       });
+
+    // Add health check
+    axios.get('/api/health')
+      .then(response =>{
+        setHealthStatus(`✅ ${response.data.status}`);
+    })
+    .catch(error => {
+      setHealthStatus(`❌ Failed: ${error.message}`);
+    });
   },[]);
 
   return(

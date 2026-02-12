@@ -2,7 +2,7 @@ import { useState } from 'react'
 import './App.css'
 import APITest from './components/APITest'
 
-export default function App{
+export default function App(){
   const [count, setCount] = useState(0);
 
   return(
