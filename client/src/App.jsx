@@ -1,21 +1,23 @@
 // import { useState } from 'react'
 import './App.css'
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react';
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton, RedirectToSignUp, RedirectToSignIn } from '@clerk/clerk-react';
+import { useNavigate } from 'react-router-dom'; // Assuming React Router
 
-function App() {
+function LandingPage() {
+  const navigate = useNavigate();
+
   return (
-    <header>
-      {/* Show the sign-in and sign-up buttons when the user is signed out */}
+    <div className="landing">
+      <h1>Dial a Stocktaker Portal</h1>
       <SignedOut>
-        <SignInButton />
-        <SignUpButton />
+        <button onClick={() => navigate('/sign-in')}>Login</button>
+        <button onClick={() => navigate('/apply')}>Apply / Sign Up</button>
       </SignedOut>
-      {/* Show the user button when the user is signed in */}
       <SignedIn>
         <UserButton />
+        {/* Redirect to dashboard after login */}
       </SignedIn>
-    </header>
+    </div>
   );
 }
-
-export default App
+export default LandingPage
