@@ -1,31 +1,21 @@
-import { useState } from 'react'
+// import { useState } from 'react'
 import './App.css'
-import APITest from './components/APITest'
+import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react';
 
-export default function App(){
-  const [count, setCount] = useState(0);
+function App() {
+  return (
+    <header>
+      {/* Show the sign-in and sign-up buttons when the user is signed out */}
+      <SignedOut>
+        <SignInButton />
+        <SignUpButton />
+      </SignedOut>
+      {/* Show the user button when the user is signed in */}
+      <SignedIn>
+        <UserButton />
+      </SignedIn>
+    </header>
+  );
+}
 
-  return(
-    <>
-      <div>
-        <h1>{import.meta.env.VITE_APP_NAME}</h1>
-        <div className="card">
-        <button onClick={()=> setCount((count)=> count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-
-      <APITest />
-      
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  </>
-  ) 
-};
-
-
+export default App
