@@ -1,7 +1,11 @@
-//import LoginButton from './LoginButton';
-//import ApplicationButton from './ApplicationButton';
 //import "../App.css";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
+
 const InstructionPage = ()=>{
+  const navigate = useNavigate();
+  const {user } = useUser();
    
   return (
 <div className="info-container max-w-5xl mx-auto px-8 py-16 bg-white font-sans">
@@ -139,9 +143,11 @@ const InstructionPage = ()=>{
       <p className="text-2xl text-gray-800 mb-12 max-w-3xl mx-auto leading-relaxed">
         Complete process → Nationwide stocktake opportunities. Flexible. Well-paid. <strong>Established 1988.</strong>
       </p>
-      <div className="bg-red-600 text-white px-12 py-8 inline-block rounded-lg border-4 border-red-600 font-bold text-xl uppercase tracking-wide hover:bg-white hover:text-red-600 transition-all duration-300 cursor-pointer">
+      <button 
+        onClick= {() => navigate('/form')}
+          className="bg-red-600 text-white px-12 py-8 inline-block rounded-lg border-4 border-red-600 font-bold text-xl uppercase tracking-wide hover:bg-white hover:text-red-600 transition-all duration-300 cursor-pointer">
         Ready? Apply Now
-      </div>
+      </button>
     </div>
 
   </div>
