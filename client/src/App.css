@@ -1,123 +1,25 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
-body{
-  @apply bg-white;
+.info-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.7;
 }
 
-/* App.css */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.info-container h1, .info-container h2, .info-container h3, .info-container h4 {
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-.app {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.letter-spacing-wide {
+  letter-spacing: 0.05em;
 }
 
-.landing-page {
-  width: 100%;
-  max-width: 500px;
-  padding: 20px;
-}
-
-.hero-section {
-  text-align: center;
-  margin-bottom: 30px;
-  color: white;
-}
-
-.hero-section h1 {
-  font-size: 2rem;
-  margin-bottom: 10px;
-}
-
-.hero-section p {
-  font-size: 1.1rem;
-  opacity: 0.9;
-}
-
-.signup-containers {
-  background: white;
-  padding: 40px;
-  border-radius: 10px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-}
-
-/* Style Clerk's form elements */
-.signup-containers .cl-card {
-  box-shadow: none;
-  padding: 0;
-}
-
-.signup-containers .cl-header {
-  padding: 0 0 20px 0;
-}
-
-.signup-containers .cl-headerTitle {
-  font-size: 1.5rem;
-  color: #333;
-}
-
-.signup-containers .cl-headerSubtitle {
-  color: #666;
-}
-
-.signup-containers .cl-socialButtonsIconButton {
-  border: 1px solid #ddd;
-  margin-bottom: 10px;
-}
-
-.signup-containers .cl-formFieldLabel {
-  color: #555;
-  font-weight: 500;
-}
-
-.signup-containers .cl-formFieldInput {
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 10px;
-}
-
-.signup-containers .cl-formButtonPrimary {
-  background: #667eea;
-  border: none;
-  padding: 10px;
-  font-weight: 500;
-}
-
-.signup-containers .cl-formButtonPrimary:hover {
-  background: #5a67d8;
-}
-
-.login-link {
-  text-align: center;
-  margin-top: 20px;
-  color: #666;
-}
-
-.login-link a {
-  color: #667eea;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.login-link a:hover {
-  text-decoration: underline;
-}
-
-/* Signed in styles */
-header {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 20px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+@media (max-width: 768px) {
+  .info-container {
+    padding: 2rem 1.5rem;
+  }
+  .info-container h1 {
+    font-size: 2.5rem;
+  }
 }
 

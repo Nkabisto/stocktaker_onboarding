@@ -1,7 +1,7 @@
 // import { useState } from 'react'
 import './App.css'
 import { SignedIn, SignedOut, SignUp, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react';
-import ApplicationForm from "./components/ApplicationForm" 
+import InstructionPage from "./pages/InstructionPage" 
 
 function App() {
   return (
@@ -17,7 +17,7 @@ function App() {
       <SignedIn>
         <header>
           <UserButton />
-          <h1>Welcome back!</h1>
+            <InstructionPage />
           {/* You can also add a redirect here */}
         </header>
       </SignedIn>
