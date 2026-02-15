@@ -5,8 +5,8 @@ import TextInput from "./inputs/TextInput";
 import RadioInput from "./inputs/RadioInput";
 import TextAreaInput from "./inputs/TextAreaInput";
 
-const ApplicationForm = () => {
-  const [formData, setFormData] = useState({
+const ApplicationForm=() => {
+  const [formData, setFormData]=useState({
     firstnames:'',
     surname:'',
     gender:'Male',
@@ -17,23 +17,28 @@ const ApplicationForm = () => {
     facebookurl:''
   });
 
-  const handleChange = (e)=>{
+  const handleChange=(e)=>{
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
   };
     
-  const handleSubmit= (e)=>{
+  const handleSubmit=(e)=>{
     e.preventDefault();
 
-    const requiredInputFields = ['firstnames','surname',
+    const requiredInputFields=['firstnames','surname',
       'gender','birthdate','said','contactnumber'];
     
     // validations
-    for(inputField of requiredInputFields){
-      if(!formData[inputField]) return
-    });
+    for(const inputField of requiredInputFields){
+      if(!formData[inputField]){ 
+        alert(`Please fill in ${inputField}`);
+        return
+      }
+    }
+
+    console.log('Form submitted:', formData);
 
     // Reset form data
     setFormData({
@@ -46,19 +51,21 @@ const ApplicationForm = () => {
       secondarycontact:'',
       facebookurl:''
     });
+
+    alert('Form submitted successfully!');
   };
 
   return(
     <>
-      <h2>Your personal details </h2>
+      <h2 className="text-xl font-bold mb-4">Your personal details </h2>
       <form onSubmit={handleSubmit} className="mb-6">
         <TextInput
           label="First Name(s)"
           name="firstnames"
           value={formData.firstnames}
           onChange={handleChange}
-          required = {true}
-          maxLength= {255}
+          required={true}
+          maxLength={255}
           filterRegex={/[^a-zA-Z\s-]/g}
           className="w-full p-2 border rounded-lg"
         />
@@ -68,8 +75,8 @@ const ApplicationForm = () => {
           name="surname"
           value={formData.surname}
           onChange={handleChange}
-          required = {true}
-          maxLength= {255}
+          required={true}
+          maxLength={255}
           filterRegex={/[^a-zA-Z\s-]/g}
           className="w-full p-2 border rounded-lg"
         />
@@ -77,25 +84,28 @@ const ApplicationForm = () => {
         <RadioInput
           label="Male"
           name="gender"
-          id="Male"
+          value="Male"
+          id="gender-male"
           onChange={handleChange}
           selectedValue={formData.gender}
         />
 
         <RadioInput
-          label="Gender"
+          label="Female"
           name="gender"
-          value={formData.gender}
-          id="Female"
+          value="Female"
+          id="gender-female"
           onChange={handleChange}
+          selectedValue={formData.gender}
         />
 
         <RadioInput
-          label="Gender"
+          label="Prefer not to say"
           name="gender"
-          value={formData.gender}
-          id="Prefer not to say"
+          value="Prefer not to say"
+          id="gender-unspecified"
           onChange={handleChange}
+          selectedValue={formData.gender}
         />
         
         <DatePicker
@@ -111,10 +121,10 @@ const ApplicationForm = () => {
           name="said"
           value={formData.said}
           onChange={handleChange}
-          required = {true}
-          maxLength= {255}
-          pattern="[0-9]{13}"
-          filterRegex={^([0-9]{2})([0-1][0-9])([0-3][0-9])([0-9]{4})([0-1])([0-9]{2})[0-9]$}    
+          required={true}
+          maxLength={13}
+          pattern="^([0-9]{2})([0-1][0-9])([0-3][0-9])([0-9]{4})([0-1])([0-9]{2})[0-9]$"
+          filterRegex={/[^0-9]/g}
           className="w-full p-2 border rounded-lg"
         />
     
@@ -125,34 +135,40 @@ const ApplicationForm = () => {
           onChange={handleChange}
           type="tel"
           placeholder="e.g 0721234567"
-          required = {true}
-          maxLength= {10}
+          required={true}
+          maxLength={10}
           pattern="0[6-8][0-9]{8}" // Matches local 10-digit format starting with 0
-          filterRegex={^([0-9]{2})([0-1][0-9])([0-3][0-9])([0-9]{4})([0-1])([0-9]{2})[0-9]$}    
+          filterRegex={/[^0-9]/g}    
           className="w-full p-2 border rounded-lg"
         />
 
         <TextInput
-          label="Cellphone Number"
+          label="Alternative Contact"
           name="secondarycontact"
           value={formData.secondarycontact}
           onChange={handleChange}
           type="tel"
           placeholder="e.g 0721234567"
-          maxLength= {10}
+          maxLength={10}
           pattern="0[6-8][0-9]{8}" // Matches local 10-digit format starting with 0
-          filterRegex={^([0-9]{2})([0-1][0-9])([0-3][0-9])([0-9]{4})([0-1])([0-9]{2})[0-9]$}    
+          filterRegex={/[^0-9]/g}    
           className="w-full p-2 border rounded-lg"
         />
 
         <TextInput
-          label="First Name(s)"
+          label="Facebook URL"
           name="facebookurl"
           value={formData.facebookurl}
           onChange={handleChange}
-          maxLength= {255}
+          maxLength={255}
           className="w-full p-2 border rounded-lg"
         />
+        <button
+          type="submit"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Submit Application
+        </button>
       </form>
     </>
   );
