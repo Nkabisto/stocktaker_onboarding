@@ -13,15 +13,23 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
-    "concurrently": "^8.0.0"
+    "concurrently": "^8.0.0",
+    "nodemon": "^3.1.11"
   },
   "engines": {
     "node": ">=16.0.0"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.60.0",
+    "@clerk/clerk-sdk-node": "^5.1.6",
     "@clerk/nextjs": "^6.37.3",
     "axios": "^1.13.5",
-    "react-router-dom": "^7.13.0"
+    "body-parser": "^2.2.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "pg": "^8.18.0",
+    "react-router-dom": "^7.13.0",
+    "svix": "^1.85.0"
   }
 }

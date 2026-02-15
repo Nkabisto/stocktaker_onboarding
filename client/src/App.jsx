@@ -1,7 +1,7 @@
 // import { useState } from 'react'
 import './App.css'
 import { SignedIn, SignedOut, SignUp, SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react';
-import ApplicationForm from "./components/Applic ationForm" 
+import ApplicationForm from "./components/ApplicationForm" 
 
 function App() {
   return (
