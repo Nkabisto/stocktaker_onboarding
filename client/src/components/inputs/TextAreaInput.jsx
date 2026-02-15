@@ -1,10 +1,10 @@
-const TextAreaInput = ({label,name,value,onChange, required=false, rows=4})=>{
+const TextAreaInput = ({label="",name="",value="",onChange, required=false,placeholder="",rows=4,disabled=false,maxLength})=>{
   return( 
     <div className="mb-4">
       <label 
         htmlFor={name} 
         className="block font-semibold">
-        {label}
+        {label}{required && <span className="text-red-500">*</span>}
       </label>
       <textarea
         id={name}
@@ -13,8 +13,12 @@ const TextAreaInput = ({label,name,value,onChange, required=false, rows=4})=>{
         value={value}
         onChange={onChange}
         required={required}
+        disabled={disabled}
         rows={rows}
-      ></textarea>
+        placeholder={placeholder}
+        maxLength={maxLength}
+        aria-disabled={disabled}
+      />
     </div>
   );
 };
