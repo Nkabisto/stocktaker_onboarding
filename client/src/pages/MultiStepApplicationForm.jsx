@@ -1,11 +1,11 @@
 // MultiStepApplicationForm.jsx
 import { useState, useEffect, useCallback } from "react";
-import DatePicker from "./inputs/DatePicker";
-import SelectInput from "./inputs/SelectInput";
-import TextInput from "./inputs/TextInput";
-import RadioInput from "./inputs/RadioInput";
-import TextAreaInput from "./inputs/TextAreaInput";
-import TimeSlotBooking from "./TimeSlotBooking";
+import DatePicker from "./inputs/DatePicker.jsx";
+import SelectInput from "./inputs/SelectInput.jsx";
+import TextInput from "./inputs/TextInput.jsx";
+import RadioInput from "./inputs/RadioInput.jsx";
+import TextAreaInput from "./inputs/TextAreaInput.jsx";
+import TimeSlotBooking from "./TimeSlotBooking.jsx";
 
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
