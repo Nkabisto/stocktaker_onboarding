@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import userRoutes from './src/routes/users';
 
 const app = express();
 
@@ -25,6 +26,8 @@ app.use((req, res, next) =>{
 
 
 //========== ROUTES ============
+app.use('/api/users', userRoutes);
+
 app.get('/api/health', (req,res)=>{
   res.status(200).json({
     status:'OK',

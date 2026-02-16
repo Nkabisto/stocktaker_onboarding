@@ -6,6 +6,10 @@ import TextInput from "./inputs/TextInput";
 import RadioInput from "./inputs/RadioInput";
 import TextAreaInput from "./inputs/TextAreaInput";
 
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react',
+import axios from 'axios';
+
 // Helper function to get default form data (avoids duplication)
 const getDefaultFormData = () => ({
   // Step 1: Personal
@@ -104,6 +108,9 @@ const MultiStepApplicationForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
 
+  const navigate = useNavigate();
+  const { user } = useUser();
+  
   // Debounced save to localStorage
   useEffect(() => {
     const timer = setTimeout(() => {

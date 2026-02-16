@@ -68,8 +68,9 @@ export async function saveFormData(req, res) {
       [userId]
     );
 
-    res.json({ success: true });
+    res.json({ success: true, message: 'Application submitted successfully' });
   } catch (error) {
+    console.error('Error saving form: ', error);
     res.status(500).json({ error: error.message });
   }
 }
