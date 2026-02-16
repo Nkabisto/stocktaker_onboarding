@@ -28,7 +28,6 @@ const getDefaultFormData = () => ({
   postcode: "",
 
   // Step 3: Education & Qualifications
-  grade11Passed: "",
   highestGrade: "",
   tertiaryInstitution: "",
   fieldOfStudy: "",
@@ -58,7 +57,7 @@ const stepValidations = {
     message: "Please fill in all required fields in Contact Details"
   }),
   3: (data) => ({
-    isValid: data.grade11Passed && data.highestGrade,
+    isValid: data.highestGrade,
     message: "Please fill in all required fields in Education"
   }),
   4: (data) => ({
@@ -190,7 +189,7 @@ const MultiStepApplicationForm = () => {
     const fields = {
       1: ['firstnames', 'surname', 'birthdate', 'said'],
       2: ['email', 'contactnumber', 'address'],
-      3: ['grade11Passed', 'highestGrade'],
+      3: ['highestGrade'],
       4: [],
       5: ['availability', 'howHeard', 'trainingFeeAware', 'transportAware']
     };
@@ -381,14 +380,6 @@ const MultiStepApplicationForm = () => {
               error={touched.said && !formData.said ? 'ID number is required' : errors.said}
             />
             
-            <TextInput
-              label="Race (optional)"
-              name="race"
-              value={formData.race}
-              onChange={handleChange}
-              maxLength={50}
-            />
-            
             <div className="mb-4">
               <label className="block font-semibold">Are you a South African citizen?</label>
               <RadioInput
@@ -467,7 +458,7 @@ const MultiStepApplicationForm = () => {
             />
             
             <TextAreaInput
-              label="Physical Address"
+              label="Street Address"
               name="address"
               value={formData.address}
               onChange={handleChange}
@@ -483,6 +474,7 @@ const MultiStepApplicationForm = () => {
               name="suburb"
               value={formData.suburb}
               onChange={handleChange}
+              required
             />
             
             <TextInput
@@ -490,6 +482,7 @@ const MultiStepApplicationForm = () => {
               name="city"
               value={formData.city}
               onChange={handleChange}
+              required
             />
             
             <TextInput
@@ -501,6 +494,7 @@ const MultiStepApplicationForm = () => {
               maxLength={4}
               filterRegex={/[^0-9]/g}
               error={errors.postcode}
+              required
             />
             
             <div className="flex">
@@ -518,32 +512,7 @@ const MultiStepApplicationForm = () => {
         {step === 3 && (
           <div className="step animate-fadeIn">
             <h2 className="text-lg font-bold mb-4">Education & Qualifications</h2>
-            
-            <div className="mb-4">
-              <label className="block font-semibold">Have you passed Grade 11?</label>
-              <RadioInput
-                label="Yes"
-                name="grade11Passed"
-                value="Yes"
-                id="grade11-yes"
-                onChange={handleChange}
-                onBlur={handleBlur}
-                selectedValue={formData.grade11Passed}
-              />
-              <RadioInput
-                label="No"
-                name="grade11Passed"
-                value="No"
-                id="grade11-no"
-                onChange={handleChange}
-                onBlur={handleBlur}
-                selectedValue={formData.grade11Passed}
-              />
-              {touched.grade11Passed && !formData.grade11Passed && (
-                <p className="text-red-500 text-sm mt-1">Please select an option</p>
-              )}
-            </div>
-            
+           
             <SelectInput
               label="Highest Grade / Qualification"
               name="highestGrade"
@@ -671,10 +640,10 @@ const MultiStepApplicationForm = () => {
               onChange={handleChange}
               onBlur={handleBlur}
               options={[
-                { value: "Full Day", label: "Full Day" },
+                { value: "All Days", label: "All Days" },
                 { value: "Weekends only", label: "Weekends only" },
-                { value: "After hours", label: "After hours" },
-                { value: "Any", label: "Any" },
+                { value: "Sundays Only", label: "Sundays Only" },
+                { value: "Mondays Only", label: "Mondays Only" },
               ]}
               placeholder="Select availability"
               required
