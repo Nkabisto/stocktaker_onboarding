@@ -5,9 +5,10 @@ import SelectInput from "./inputs/SelectInput";
 import TextInput from "./inputs/TextInput";
 import RadioInput from "./inputs/RadioInput";
 import TextAreaInput from "./inputs/TextAreaInput";
+import TimeSlotBooking from "./TimeSlotBooking"; // Import the new component
 
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '@clerk/clerk-react',
+import { useUser } from '@clerk/clerk-react';
 import axios from 'axios';
 
 // Helper function to get default form data (avoids duplication)
@@ -48,6 +49,10 @@ const getDefaultFormData = () => ({
   otherHowHeard: "",
   trainingFeeAware: "",
   transportAware: "",
+  
+  // Step 6: Interview Booking
+  interviewDate: "",
+  interviewTime: "",
 });
 
 // Validation rules for each step
@@ -57,7 +62,7 @@ const stepValidations = {
     message: "Please fill in all required fields in Personal Information"
   }),
   2: (data) => ({
-    isValid: data.email && data.contactnumber && data.address,
+    isValid: data.email && data.contactnumber && data.address && data.suburb && data.city && data.postcode,
     message: "Please fill in all required fields in Contact Details"
   }),
   3: (data) => ({
@@ -71,6 +76,10 @@ const stepValidations = {
   5: (data) => ({
     isValid: data.availability && data.howHeard && data.trainingFeeAware && data.transportAware,
     message: "Please fill in all required fields in Availability"
+  }),
+  6: (data) => ({
+    isValid: data.interviewDate && data.interviewTime,
+    message: "Please select both a date and time slot for your interview"
   })
 };
 
@@ -81,7 +90,7 @@ const MultiStepApplicationForm = () => {
       const saved = localStorage.getItem('stocktaker-form');
       if (saved) {
         const parsed = JSON.parse(saved);
-        return parsed.step && parsed.step >= 1 && parsed.step <= 5 ? parsed.step : 1;
+        return parsed.step && parsed.step >= 1 && parsed.step <= 6 ? parsed.step : 1;
       }
     } catch (e) {
       console.warn('Failed to load saved step from localStorage', e);
@@ -107,10 +116,32 @@ const MultiStepApplicationForm = () => {
   const [touched, setTouched] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
+  const [bookedSlots, setBookedSlots] = useState({});
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
   const navigate = useNavigate();
   const { user } = useUser();
   
+  // Fetch booked slots from API
+  useEffect(() => {
+    const fetchBookedSlots = async () => {
+      setIsLoadingSlots(true);
+      try {
+        // Replace with your actual API endpoint
+        const response = await axios.get('/api/booked-slots');
+        setBookedSlots(response.data);
+      } catch (error) {
+        console.error('Failed to fetch booked slots:', error);
+        // Set empty object on error to allow all slots
+        setBookedSlots({});
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    };
+    
+    fetchBookedSlots();
+  }, []);
+
   // Debounced save to localStorage
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -144,6 +175,22 @@ const MultiStepApplicationForm = () => {
     // Clear error for this field when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
+    }
+  }, [errors]);
+
+  const handleBookingChange = useCallback((date, time) => {
+    setFormData(prev => ({
+      ...prev,
+      interviewDate: date,
+      interviewTime: time
+    }));
+    
+    // Clear errors
+    if (errors.interviewDate) {
+      setErrors(prev => ({ ...prev, interviewDate: null }));
+    }
+    if (errors.interviewTime) {
+      setErrors(prev => ({ ...prev, interviewTime: null }));
     }
   }, [errors]);
 
@@ -195,16 +242,17 @@ const MultiStepApplicationForm = () => {
   const getStepFields = (stepNumber) => {
     const fields = {
       1: ['firstnames', 'surname', 'birthdate', 'said'],
-      2: ['email', 'contactnumber', 'address'],
+      2: ['email', 'contactnumber', 'address', 'suburb', 'city', 'postcode'],
       3: ['highestGrade'],
       4: [],
-      5: ['availability', 'howHeard', 'trainingFeeAware', 'transportAware']
+      5: ['availability', 'howHeard', 'trainingFeeAware', 'transportAware'],
+      6: ['interviewDate', 'interviewTime']
     };
     return fields[stepNumber] || [];
   };
 
   const nextStep = () => {
-    if (step < 5 && validateStep(step)) {
+    if (step < 6 && validateStep(step)) {
       setStep(step + 1);
       window.scrollTo(0, 0); // Scroll to top on step change
     }
@@ -231,29 +279,46 @@ const MultiStepApplicationForm = () => {
     e.preventDefault();
     
     // Validate final step
-    if (!validateStep(5)) {
+    if (!validateStep(6)) {
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Prepare data for submission
+      const submissionData = {
+        ...formData,
+        userId: user?.id,
+        submittedAt: new Date().toISOString(),
+      };
+
+      // Submit to your backend
+      const response = await axios.post('/api/apply', submissionData);
       
-      console.log("Final submission:", formData);
+      // Book the interview slot
+      if (formData.interviewDate && formData.interviewTime) {
+        await axios.post('/api/book-slot', {
+          date: formData.interviewDate,
+          time: formData.interviewTime,
+          userId: user?.id,
+          applicationId: response.data.applicationId
+        });
+      }
+      
+      console.log("Final submission:", submissionData);
       
       // Clear saved form on successful submission
       localStorage.removeItem('stocktaker-form');
       
-      alert("Application submitted successfully! We'll be in touch within 5-7 business days.");
+      alert("Application submitted successfully! We'll be in touch within 5-7 business days to confirm your interview slot.");
       
-      // Reset form after submission
-      setFormData(getDefaultFormData());
-      setStep(1);
+      // Redirect to dashboard or home
+      navigate('/dashboard');
+      
     } catch (error) {
       console.error('Submission failed:', error);
-      alert('Failed to submit application. Please try again.');
+      alert(error.response?.data?.message || 'Failed to submit application. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -264,7 +329,7 @@ const MultiStepApplicationForm = () => {
   const submitButtonClass = "bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed";
 
   // Progress percentage
-  const progressPercentage = ((step - 1) / 4) * 100;
+  const progressPercentage = ((step - 1) / 5) * 100;
 
   return (
     <div className="max-w-2xl mx-auto p-4">
@@ -481,7 +546,9 @@ const MultiStepApplicationForm = () => {
               name="suburb"
               value={formData.suburb}
               onChange={handleChange}
+              onBlur={handleBlur}
               required
+              error={touched.suburb && !formData.suburb ? 'Suburb is required' : null}
             />
             
             <TextInput
@@ -489,7 +556,9 @@ const MultiStepApplicationForm = () => {
               name="city"
               value={formData.city}
               onChange={handleChange}
+              onBlur={handleBlur}
               required
+              error={touched.city && !formData.city ? 'City is required' : null}
             />
             
             <TextInput
@@ -744,12 +813,88 @@ const MultiStepApplicationForm = () => {
               <button type="button" onClick={prevStep} className={buttonClass}>
                 Previous
               </button>
+              <button type="button" onClick={nextStep} className={buttonClass}>
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 6: Interview Booking */}
+        {step === 6 && (
+          <div className="step animate-fadeIn">
+            <h2 className="text-lg font-bold mb-4">Schedule Your Interview</h2>
+            
+            <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Important:</strong> Please select a date and time for your interview. 
+                Interviews are available Monday to Friday from 8:00 AM to 12:00 PM in 30-minute slots.
+              </p>
+            </div>
+
+            {isLoadingSlots ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <p className="mt-2 text-gray-600">Loading available slots...</p>
+              </div>
+            ) : (
+              <TimeSlotBooking
+                selectedDate={formData.interviewDate}
+                selectedTime={formData.interviewTime}
+                onDateChange={(date) => handleBookingChange(date, formData.interviewTime)}
+                onTimeChange={(time) => handleBookingChange(formData.interviewDate, time)}
+                onBlur={() => {
+                  setTouched(prev => ({ 
+                    ...prev, 
+                    interviewDate: true, 
+                    interviewTime: true 
+                  }));
+                }}
+                error={
+                  (touched.interviewDate && !formData.interviewDate) ? 'Please select a date' :
+                  (touched.interviewTime && !formData.interviewTime) ? 'Please select a time' : null
+                }
+                required={true}
+                bookedSlots={bookedSlots}
+              />
+            )}
+
+            {/* Selected slot summary */}
+            {formData.interviewDate && formData.interviewTime && (
+              <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h3 className="font-semibold text-green-800 mb-2">Selected Interview Slot:</h3>
+                <p className="text-green-700">
+                  <strong>Date:</strong> {new Date(formData.interviewDate).toLocaleDateString('en-ZA', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })}
+                </p>
+                <p className="text-green-700">
+                  <strong>Time:</strong> {formData.interviewTime.replace(':', ':')} (30-minute slot)
+                </p>
+              </div>
+            )}
+            
+            <div className="flex mt-6">
+              <button type="button" onClick={prevStep} className={buttonClass}>
+                Previous
+              </button>
               <button 
                 type="submit" 
                 className={submitButtonClass}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isLoadingSlots}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Submitting...
+                  </span>
+                ) : 'Submit Application'}
               </button>
             </div>
           </div>
@@ -758,7 +903,7 @@ const MultiStepApplicationForm = () => {
 
       {/* Step indicator */}
       <div className="mt-6 flex justify-between items-center text-sm text-gray-600">
-        <span>Step {step} of 5</span>
+        <span>Step {step} of 6</span>
         <button
           type="button"
           onClick={() => setStep(1)}
@@ -780,6 +925,15 @@ const styles = `
   
   .animate-fadeIn {
     animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  
+  .animate-spin {
+    animation: spin 1s linear infinite;
   }
 `;
 
