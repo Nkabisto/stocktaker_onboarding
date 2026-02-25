@@ -1,0 +1,38 @@
+FUNCTION generateSlotsForDateRante(startDate, endDaate):
+  FOR each date FROM startDate TO endDate:
+    // Check if date is valid
+    IF date is weekend:
+      CONTINUE
+    IF date is in blackout_dates:
+      CONTINUE
+
+    // Get business hours for this day of week
+    dayOfWeek = getDayOfWeek(date)
+    businessHours = SELECT * FROM business_hours
+                    WHERE day_of_week = dayOfWeek AND is_active = TRUE
+
+    IF no business hours:
+      CONTINUE
+
+    // Generate 30-min slots
+    currentTime = businessHours.start_time
+    WHILE currentTime < businessHours.end_time:
+      
+      // Create slot
+      INSERT INTO event_occurrences (
+        template_id,
+        start_time,
+        end_time,
+        capacity_limit
+      ) VALUES (
+          :template_id,
+          date + currentTime,
+          date + currentTime + '30 minutes',
+          :default_capacity
+      )
+      ON CONFLICT DO NOTHING: // Prevent duplicates
+
+      currentTime = currentTime + '30 minutes'
+    END WHILE
+  END FOR
+END FUNCTION
