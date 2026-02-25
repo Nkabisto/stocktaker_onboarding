@@ -1,0 +1,73 @@
+import { query, pool } from '../config/database.js';
+// Replace with the actual path to where you saved the SMS utility
+import { sendSMS } from '../utils/smsService.js'; 
+
+// ... (getUserStatus and upsertUser remain the same) ...
+
+export async function saveFormData(req, res) {
+  const { userId, formData } = req.body;
+  if (!userId) return res.status(400).json({ error: 'User ID required' });
+
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    const columns = [];
+    const values = [];
+    const placeholders = [];
+
+    // Construct query from verified mapping
+    Object.entries(COLUMN_MAPPING).forEach(([key, mapping], index) => {
+      const rawValue = formData[key];
+      const columnName = typeof mapping === 'string' ? mapping : mapping.column;
+      let value = typeof mapping === 'string' ? rawValue : mapping.format(rawValue);
+
+      if (value === '' || value === undefined) value = null;
+
+      columns.push(columnName);
+      values.push(value);
+      placeholders.push(`$${index + 1}`);
+    });
+
+    const finalValues = [...values, userId];
+    const insertQuery = `
+      INSERT INTO form_submissions (${columns.join(', ')}, user_id, is_complete)
+      VALUES (${placeholders.join(', ')}, $${finalValues.length}, true)
+      ON CONFLICT (user_id) DO UPDATE SET
+        ${columns.map(col => `${col} = EXCLUDED.${col}`).join(', ')},
+        is_complete = true,
+        updated_at = NOW()
+    `;
+
+    await client.query(insertQuery, finalValues);
+
+    await client.query(
+      'UPDATE users SET has_completed_form = true WHERE id = $1',
+      [userId]
+    );
+
+    await client.query('COMMIT');
+
+    // --- Send Confirmation SMS ---
+    // Only happens if the DB transaction succeeded
+    if (formData.contactnumber) {
+      const smsMessage = `Hi ${formData.firstnames || 'there'}, your application has been received successfully!`;
+      
+      // We don't "await" this if we don't want to make the user wait for the SMS gateway
+      sendSMS(formData.contactnumber, smsMessage).catch(err => 
+        console.error('Non-critical SMS failure:', err)
+      );
+    }
+
+    res.json({ success: true, message: 'Application submitted successfully' });
+
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Transaction Error:', error);
+    res.status(500).json({ error: 'An error occurred while saving your application.' });
+  } finally {
+    client.release();
+  }
+}
+

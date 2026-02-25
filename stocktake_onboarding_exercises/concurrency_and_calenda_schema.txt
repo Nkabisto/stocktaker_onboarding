@@ -1,0 +1,232 @@
+
+-- Many-to-many relationship
+CREATE TABLE languages (id, name);
+## ✅ Your Action Items
+
+1. **Design the complete slot booking system:**
+
+    -- Option 1: Business hours table
+CREATE TABLE business_hours (
+    day_of_week INTEGER, -- 0 = Sunday, 6 = Saturday
+    start_time TIME,
+    end_time TIME,
+    is_active BOOLEAN
+);
+
+);
+   - Tables for business hours/holidays
+      - Tables for slots
+CREATE TABLE blackout_dates (
+    date DATE PRIMARY KEY,
+    reason TEXT CHECK (reason IN ('Weekend', 'Public Holiday', 'Office Closed', 'Other'))
+    
+   - Pseudocode for booking logic with locking
+   BEGIN;
+  SELECT current_bookings, version FROM event_occurrences WHERE id = 123;
+  
+  -- Check capacity
+  -- Insert booking
+  
+  UPDATE event_occurrences 
+  SET current_bookings = current_bookings + 1,
+      version = version + 1
+  WHERE id = 123 AND version = <old_version>;
+  
+  -- If UPDATE affected 0 rows, rollback and retry
+COMMIT;
+
+2. **Add missing normalized tables:**
+	-- Employment history
+CREATE TABLE employment_history(
+	 id SERIAL PRIMARY KEY,
+	user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+	job_type TEXT,
+	job_company_name TEXT,
+	job_start_date DATE,
+	job_end_date DATE,
+	job_salary NUMERIC(12,2),
+	job_reference_name TEXT,
+	job_reference_role TEXT,
+	job_reference_contact TEXT CHECK (job_reference_contact ~ '^0[0-9]{9}$'),
+	CONSTRAINT check_dates_1 CHECK (job_end_date IS NULL OR job_end_date > job_start_date)
+)   
+   - Languages (if needed)
+   CREATE TYPE proficiency_level AS ENUM ('Good', 'Average', 'Poor');
+CREATE TABLE user_languages (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+    language_name VARCHAR(100) NOT NULL, -- e.g., 'English', 'isiZulu', 'Afrikaans'
+    
+    -- Categorised proficiencies using the enum
+    speaking_level proficiency_level NOT NULL,
+    reading_level proficiency_level NOT NULL,
+    writing_level proficiency_level NOT NULL,
+    
+    is_native BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    
+    -- Prevent duplicate entries for the same language per user
+    CONSTRAINT unique_user_language UNIQUE (user_id, language_name)
+);
+   
+   - Skills (if needed)
+-- 1. Predefined list of skills to populate your checkboxes
+CREATE TABLE skills_list (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);   
+-- 2. Join table for user selections
+ CREATE TABLE user_skills (
+    user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+    skill_id INTEGER REFERENCES skills_list(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    PRIMARY KEY (user_id, skill_id) -- Prevents duplicate skill selection
+);
+   
+
+   
+   - Tertiary education (if needed)
+CREATE TABLE tertiary_qualifications (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR(255) REFERENCES users(id) ON DELETE CASCADE,
+    institution_name VARCHAR(255) NOT NULL,
+    qualification_type VARCHAR(100) NOT NULL, -- e.g., 'National Diploma', 'BCom', 'BSc'
+    field_of_study VARCHAR(255) NOT NULL,    -- e.g., 'Information Technology'
+    specialisation VARCHAR(255),             -- e.g., 'Software Development'
+    
+    -- Status tracking
+    is_completed BOOLEAN DEFAULT FALSE,
+    year_started INTEGER CHECK (year_started > 1950),
+    year_completed INTEGER, -- Null if still studying
+    expected_graduation_year INTEGER,
+    
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Basic logical check for dates
+    CONSTRAINT check_dates CHECK (year_completed IS NULL OR year_completed >= year_started)
+);
+
+CREATE TABLE tertiary_subjects (
+    id SERIAL PRIMARY KEY,
+    qualification_id INTEGER REFERENCES tertiary_qualifications(id) ON DELETE CASCADE,
+    subject_name VARCHAR(255) NOT NULL,
+    -- SAQA / NQF Level mapping (typically 5 to 10 for tertiary)
+    nqf_level INTEGER CHECK (nqf_level BETWEEN 5 AND 10),
+    -- Result percentage
+    result_percentage INTEGER CHECK (result_percentage BETWEEN 0 AND 100),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+3. **Write sample queries** for common operations:
+   - Get available slots
+SELECT 
+    start_time::date AS available_date,
+    COUNT(id) AS open_slots_count
+FROM event_occurrences
+WHERE start_time BETWEEN CURRENT_DATE + INTERVAL '2 days' AND CURRENT_DATE + INTERVAL '90 days'
+  AND is_active = TRUE
+  AND current_bookings < capacity_limit
+GROUP BY start_time::date
+ORDER BY available_date ASC;
+   
+   
+   
+   - Book a slot (with FOR UPDATE)
+   
+   BEGIN;
+  SELECT current_bookings, version FROM event_occurrences WHERE id = 123;
+  
+  -- Check capacity
+  -- Insert booking
+  
+  UPDATE event_occurrences 
+  SET current_bookings = current_bookings + 1,
+      version = version + 1
+  WHERE id = 123 AND version = <old_version>;
+  
+  -- If UPDATE affected 0 rows, rollback and retry
+COMMIT;
+
+
+   - Cancel a booking
+BEGIN;
+
+-- 1. Remove the user's booking
+DELETE FROM event_registrations 
+WHERE user_id = 'user_clerk_987' AND occurrence_id = 123;
+
+-- 2. Free up the slot for someone else
+UPDATE event_occurrences 
+SET current_bookings = current_bookings - 1 
+WHERE id = 123 AND current_bookings > 0;
+
+COMMIT;
+
+4. **Document your decisions:**
+   - Why did you choose pre-generation vs on-demand?
+   Pre-generation is better for performance as I'm not generating queries every time a user loads the page.
+   It offers admin greater control as they can manually deactivate specific dates and times.
+   
+   - Why did you choose pessimistic vs optimistic locking?
+   I choose optimistic locking because it's more efficient as people are choosing between different days/times so the probability of multiple people 
+   selecting the same days/time slots at the same time is low, as the number of expected daily visitors is less than a thousand.
+   
+   - What indexes would you create and why?
+   An index to to obtain available slots will significantly improve system's performance.
+CREATE INDEX idx_available_slots 
+ON event_occurrences (start_time) 
+WHERE is_active = TRUE AND current_bookings < capacity_limit;
+
+---
+
+## 🎯 Key Question for Next Time
+
+When you submit your updated schema, please answer:
+
+**"How does your system handle this scenario?"**
+```
+Scenario:
+- Training event: Jan 15, 2026, 9:00-12:00 AM
+- Capacity: 20 people
+- Current bookings: 18
+- At 2:00 PM on Jan 10:
+  - 5 people simultaneously try to book
+  - Only 2 slots remain
+
+Walk me through:
+1. What database operations happen?
+An Optimistic Locking of a row occurs where only one write operation is permitted at a time.
+
+2. How many people get booked?
+Two people get booked.
+
+3. What do the other 3 people experience?
+The other 3 people would immediately fail the update and have to retry.
+
+4. Show me the SQL with locking
+
+BEGIN;
+  -- 1. Read current state
+  SELECT current_bookings, capacity_limit, version 
+  FROM event_occurrences WHERE id = 123;
+
+  -- 2. (App logic checks if current_bookings < capacity_limit)
+
+  -- 3. Attempt update only if version hasn't changed
+  UPDATE event_occurrences 
+  SET current_bookings = current_bookings + 1,
+      version = version + 1
+  WHERE id = 123 
+    AND version = :old_version 
+    AND current_bookings < capacity_limit;
+
+  -- 4. (App logic: If rows affected == 1, then INSERT into registrations and COMMIT)
+  -- 5. (Else, ROLLBACK and Notify User/Retry)
+COMMIT;
+

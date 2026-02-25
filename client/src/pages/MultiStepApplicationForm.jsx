@@ -392,6 +392,7 @@ const MultiStepApplicationForm = () => {
                 onChange={handleChange}
                 onBlur={handleBlur}
                 selectedValue={formData.southAfricanCitizen}
+                required
               />
               <RadioInput
                 label="No"
