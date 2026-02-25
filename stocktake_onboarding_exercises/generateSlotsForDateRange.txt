@@ -1,4 +1,13 @@
-FUNCTION generateSlotsForDateRante(startDate, endDaate):
+FUNCTION generateSlotsForDateRante(startDate, endDate):
+  IF StartDate >= endDate :
+    RAISE EXCEPTION: "INVALID DATE RANGE"
+
+  IF startDate < today() + 2 DAYS:
+    startDate = today() + 2 DAYS 
+    PRINT_TO_CONSOLE('changed start date to two days from now')
+  IF endDate > today() + 90 days:
+    endDate = today() + 90 days;
+
   FOR each date FROM startDate TO endDate:
     // Check if date is valid
     IF date is weekend:
