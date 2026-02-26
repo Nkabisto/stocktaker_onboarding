@@ -1,39 +1,30 @@
-// Option A: Automatic Retry (Backend)
-// Express endpoint
-async function bookSlot(req,res){
+async function  bookSlot(req, res){
+  const { userId, occurrenceId } = req.body;
   const MAX_RETRIES = 3;
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++){
     try{
       await attemptBooking(userId, occurrenceId);
-      return res.json ({success:true});
-    } catch(error){
-        if (error.code === 'VERSION_MISMATCH' && attempt < MAX_RETRIES){
-          // Wait a bit and retry
-          await sleep(100 * attempt); // Exponential bac koff
-          continue;
-        }
-        throw error;
+      return res.status(200).json({
+        success: true,
+        message: 'Booking confirmed'
+      });
+    }catch(error){
+      const isConflict = error.code === 'VERSION_MISMATCH';
+      const canRetry = attempt < MAX_RETRIES;
+
+      if (isConflict && canRetry){
+        console.warn(`Attempt ${attempt}: Concurrency conflict. Retrying...');
+        await new Promises(res => setTimeout(res, Math.pow(2, attempt - 1)));
+        continue;
       }
-  }
-
-  return res.status(409).json({
-    error: 'Slot filled during booking attempt'
-  });
-}
-
-
-// Option B: User-initiated Retry (Frontend)
-// React Component
-const handleBooking = async () => {
-  try {
-    await api.bookSlot(occurrenceId);
-    setSuccess(trye);
-  } catch(error){
-      if (error.status === 409){
-      // Show user: "This slot just filled. Try another?"
-      setError('Slot unavailable, please select another time');
+      
+      const status = isConflict ? 409 : 500;
+      const message = isConflict
+      ? 'Slot taken. Please try an other time slot.'
+      : 'Server error. Please try again later.';
+    
+      return res.status(status).json({error: message });
     }
   }
-};
-
+}
