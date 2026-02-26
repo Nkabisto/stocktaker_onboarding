@@ -1,12 +1,12 @@
-FUNCTION generateSlotsForDateRante(startDate, endDate):
-  IF StartDate >= endDate :
+FUNCTION generateSlotsForDateRange(startDate, endDate):
+  IF startDate >= endDate :
     RAISE EXCEPTION: "INVALID DATE RANGE"
 
   IF startDate < today() + 2 DAYS:
-    startDate = today() + 2 DAYS 
+    startDate = today() + 2 DAYS //start date should be two days from now to give admin time to prepare
     PRINT_TO_CONSOLE('changed start date to two days from now')
   IF endDate > today() + 90 days:
-    endDate = today() + 90 days;
+    endDate = today() + 90 days; //bookings are limited to approximately three months from now
 
   FOR each date FROM startDate TO endDate:
     // Check if date is valid
@@ -17,13 +17,15 @@ FUNCTION generateSlotsForDateRante(startDate, endDate):
 
     // Get business hours for this day of week
     dayOfWeek = getDayOfWeek(date)
+    //Question: will businessHours not be an array of dictionaries or tuples?
     businessHours = SELECT * FROM business_hours
                     WHERE day_of_week = dayOfWeek AND is_active = TRUE
 
-    IF no business hours:
+    IF no businessHours:
       CONTINUE
 
     // Generate 30-min slots
+    /* I'm confused here. To my logic I would first need to get the template_id from the backend logic. Then use it as an id in the event_templates table to obtain base_max_attendees, to insert into event_occurrences. Afterwards, obtain all the rows in business_hours table corresponding to the day of the week that are active. Afterwards, obtain the start_times and end_times to insert into the event_occurrence table. I also do not know how to handle timezone conversions. To obtain count_slots I would increment a variable called count_slots (initialy set to zero) every time a successful slot is created in the event_occurrences table. */ 
     currentTime = businessHours.start_time
     WHILE currentTime < businessHours.end_time:
       

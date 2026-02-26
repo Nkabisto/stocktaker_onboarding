@@ -20,10 +20,10 @@ CREATE TABLE IF NOT EXISTS event_registrations(
   INSERT INTO event_occurrences
   (template_id, start_time, end_time, capacity_limit, current_bookings, version)
   VALUES
-  (1, '2026-01-15 09:00:00+2', '2026-01-15 12:00:00+2', 20, 18, 1)
+  (1, '2026-01-16 09:00:00+2', '2026-01-16 12:00:00+2', 20, 18, 1)
   ON CONFLICT (id) DO NOTHING;
 
---/*
+/*
 BEGIN;
   -- App-side fetch simulation: version 1
   UPDATE event_occurrences 
@@ -39,4 +39,4 @@ COMMIT;
 -- 3. Demonstrate that only 2 succeed
 
     -- 4. Show the error handling for the other 3
---*/
+*/

@@ -1,0 +1,173 @@
+1. Optimistic locking transaction code
+  I do not know how to signal a failed update due to concurrency clash
+
+  CREATE TABLE IF NOT EXISTS event_occurrences(
+    id SERIAL PRIMARY KEY,
+    template_id INTEGER,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ NOT NULL,
+    capacity_limit INTEGER NOT NULL,
+    current_bookings INTEGER DEFAULT 0,
+    version INTEGER NOT NULL DEFAULT 1,
+    is_active BOOLEAN DEFAULT TRUE,
+    CHECK (current_bookings <= capacity_limit)
+  );
+
+  CREATE TABLE IF NOT EXISTS event_registrations(
+    id SERIAL PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    occurrence_id INTEGER REFERENCES event_occurrences(id) ON DELETE CASCADE ,
+    registered_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+  );
+    -- Create a training event with 18/20 spots taken 
+    INSERT INTO event_occurrences
+    (template_id, start_time, end_time, capacity_limit, current_bookings, version)
+    VALUES
+    (1, '2026-01-16 09:00:00+2', '2026-01-16 12:00:00+2', 20, 18, 1)
+    ON CONFLICT (id) DO NOTHING;
+
+
+
+  BEGIN;
+  WITH updated AS (
+    ---1. Try to update the row ONLY if version is still 1 and there is still space
+    UPDATE event_occurrences
+    SET current_bookings = current_bookings + 1,
+        version = version + 1
+    WHERE id = 1
+      AND version = 2 
+      AND current_bookings < capacity_limit
+      RETURNING id -- this only returns a row if the UPDATE actually happened
+  )
+    -- 1. Check if the update actually modifed a row
+    -- In psql, we can use a trick to fail if the update didin't happen
+    INSERT INTO event_registrations (user_id, occurrence_id)
+    SELECT 'user_1001', id 
+    FROM updated;
+    
+  COMMIT;
+
+
+
+2. Combined automated and user retry mechanism
+  /**
+   * SERVER-SIDE: Express Controller
+   * This handles "Optimistic Concurrency" automatically using retries.
+   */
+  async function bookSlot(req, res) {
+    const { userId, occurrenceId } = req.body;
+    const MAX_RETRIES = 3;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        // attemptBooking should throw a specific 'VERSION_MISMATCH' error 
+        // if the SQL 'UPDATE' affected 0 rows.
+        await attemptBooking(userId, occurrenceId);
+        
+        return res.status(200).json({ 
+          success: true, 
+          message: 'Booking confirmed' 
+        });
+
+      } catch (error) {
+        const isConflict = error.code === 'VERSION_MISMATCH';
+        const canRetry = attempt < MAX_RETRIES;
+
+        if (isConflict && canRetry) {
+          // Log the collision and wait (Exponential Backoff: 100ms, 200ms...)
+          console.warn(`Concurrency collision on attempt ${attempt}. Retrying...`);
+          await new Promise(res => setTimeout(res, 100 * attempt));
+          continue;
+        }
+
+        // If we are here, it's either a real error (DB down) or we ran out of retries
+        const status = isConflict ? 409 : 500;
+        const message = isConflict 
+          ? 'The slot was taken by someone else. Please try again or pick another.' 
+          : 'Internal server error';
+
+        return res.status(status).json({ error: message, code: error.code });
+      }
+    }
+  }
+
+  /**
+   * CLIENT-SIDE: React Component Function
+   * This handles the "User-Level" retry logic.
+   */
+  const handleBooking = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.bookSlot(occurrenceId);
+      setSuccess(true);
+    } catch (error) {
+      // 409 Conflict means even after server retries, the version changed or capacity was hit
+      if (error.response?.status === 409) {
+        setError({
+          title: "Booking Conflict",
+          message: "It looks like other people are booking this at the same time. Would you like to try one more time?",
+          canRetry: true
+        });
+      } else {
+        setError({
+          title: "Error",
+          message: "Something went wrong. Please try again later.",
+          canRetry: false
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+3. Slot generation algorithm 
+
+  -- Query 1: Get slots for a specific date range
+  SELECT * FROM event_occurrences
+  WHERE start_time BETWEEN :start_date AND :end_date
+    AND is_active = TRUE
+    AND current_bookings < capacity_limit;
+
+  -- Query 2: Get slots for a specific event type
+  SELECT * FROM event_occurrences eo
+  JOIN event_templates et on eo.template_id = et.id
+  WHERE et.title = 'Interview'
+    AND eo.start_time >= CURRENT_DATE
+    AND eo.current_bookings < eo.capacity_limit;
+
+  -- Query 3: Get user's bookings
+  SELECT * FROM event_registrations
+  WHERE user_id = :user_id
+  ORDER BY registered_at DESC;
+
+4. Index strategy
+  --Question 5: For each query, what indexes would help? Think about:
+  -- # Column order in composite indexes
+  -- # Which queries happen most frequently
+  -- # Write vs read trade-off
+
+  --Answer
+  -- Query 1 B-Tree recommended columns: (is_active, start_time) reason: Equality first, then Range
+  -- Query 2 B-Tree recommended columns:(template_id, start_time) reason: Optimizes the Join + Date filter 
+  -- Query 3 B-Tree recommended columns: (user_id, registered_at DESC) reason: Powers the filter AND the sort.
+
+
+5. Simulation of the 5-user scenario
+I firstly created the tables and executed the first insert into the event_occurrences table. Then I used tmux to open 5 separate panes which I synchronised with 'setw synchronize panes on'. I then ran the following command:'psql -f test_booking.sql stocktake_db'. On each of the 5 panes it displayed the following output:
+BEGIN
+INSERT
+COMMIT
+
+On the first run only one pane showed INSERT 0 1, the rest showed INSERT 0 0. On the second run again only one pane showed INSERT 0 1 and the rest showed INSERT 0 0. 
+
+
+
+
+
+
+
+
+
