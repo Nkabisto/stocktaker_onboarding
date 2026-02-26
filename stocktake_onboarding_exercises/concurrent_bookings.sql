@@ -23,14 +23,14 @@ CREATE TABLE IF NOT EXISTS event_registrations(
   (1, '2026-01-15 09:00:00+2', '2026-01-15 12:00:00+2', 20, 18, 1)
   ON CONFLICT (id) DO NOTHING;
 
-/*
+--/*
 BEGIN;
   -- App-side fetch simulation: version 1
   UPDATE event_occurrences 
   SET current_bookings = current_bookings + 1, version = version + 1
   WHERE id = 1 AND version = 1 AND current_bookings < capacity_limit;
   
-  -- If update succeeds, in sert registration
+  -- If update succeeds, insert registration
   INSERT INTO event_registrations (user_id, occurrence_id)  VALUES('user_1001',1);
 COMMIT;
 
@@ -39,4 +39,4 @@ COMMIT;
 -- 3. Demonstrate that only 2 succeed
 
     -- 4. Show the error handling for the other 3
-*/
+--*/
